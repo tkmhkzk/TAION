@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TAION 体温</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@300;400&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+/* Layout: the flyer as a page. One dark field of isotherms behind everything; few words, flyer hierarchy top to bottom. Single dark look, by the flyer's own direction. */
+:root{
+  color-scheme: dark;
+  --ground:#17110F;
+  --ink:#F4ECE4;
+  --ink-2:#C9BBAE;
+  --ink-3:#A89585;
+  --ember:#E8572E;
+  --rule:#6A5447;
+  --f-display:'Anton', 'Impact', sans-serif;
+  --f-body:'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  --f-mono:'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+*{box-sizing:border-box}
+html,body{background:var(--ground)}
+body{color:var(--ink);font-family:var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+#field{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+.sheet{position:relative;z-index:1;max-width:880px;margin:0 auto;min-height:100%;
+  padding-left:max(24px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px));padding-block:28px 40px;
+  display:flex;flex-direction:column;gap:clamp(48px, 9vh, 96px)}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.lbl{font-family:var(--f-mono);font-weight:300;font-size:13px;letter-spacing:.16em;color:var(--ink-3)}
+
+.hero{display:flex;flex-direction:column;gap:clamp(18px, 3vw, 28px);margin-top:clamp(8px, 4vh, 40px)}
+.mark{margin:0;display:flex;align-items:flex-start;gap:clamp(10px, 2vw, 22px);line-height:.8}
+.mark b{font-family:var(--f-display);font-weight:400;font-size:clamp(120px, 31vw, 272px);letter-spacing:-.01em;line-height:.8;margin-left:-.04em}
+.mark span{font-family:var(--f-body);font-weight:900;font-size:clamp(16px, 3vw, 26px);letter-spacing:.35em;writing-mode:vertical-rl;color:var(--ember);padding-top:.2em}
+.line{margin:0;font-weight:900;font-size:clamp(30px, 7vw, 60px);letter-spacing:.06em;line-height:1.2}
+.line em{font-style:normal;color:var(--ember)}
+@media (prefers-reduced-motion:no-preference){
+  .mark b i{display:inline-block;font-style:normal;animation:up .9s cubic-bezier(.2,.8,.2,1) both}
+  .mark b i:nth-child(2){animation-delay:.07s}.mark b i:nth-child(3){animation-delay:.14s}.mark b i:nth-child(4){animation-delay:.21s}.mark b i:nth-child(5){animation-delay:.28s}
+  @keyframes up{from{transform:translateY(.35em);opacity:0}to{transform:none;opacity:1}}
+  .mark span{animation:fade .8s .6s both}
+  .line{animation:heat 1.6s .7s both}
+  @keyframes heat{from{opacity:0;letter-spacing:.3em;filter:blur(6px)}to{opacity:1;letter-spacing:.06em;filter:none}}
+  .line em{animation:glow 3.2s 2.4s ease-in-out infinite}
+  @keyframes glow{50%{color:#FF8A55;text-shadow:0 0 18px rgba(232,87,46,.55)}}
+  .dj>*{display:inline-block;animation:slide .7s cubic-bezier(.2,.8,.2,1) both}
+  .dj>*:nth-child(1){animation-delay:1.1s}.dj>*:nth-child(2){animation-delay:1.2s}.dj>*:nth-child(3){animation-delay:1.25s}.dj>*:nth-child(4){animation-delay:1.35s}.dj>*:nth-child(5){animation-delay:1.4s}.dj>*:nth-child(6){animation-delay:1.5s}.dj>*:nth-child(7){animation-delay:1.55s}.dj>*:nth-child(8){animation-delay:1.65s}.dj>*:nth-child(9){animation-delay:1.7s}
+  @keyframes slide{from{transform:translateX(-24px);opacity:0}to{transform:none;opacity:1}}
+  .info{animation:fade .9s 1.8s both}.go{animation:fade .9s 2.1s both}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .btn{transition:background .2s,color .2s,border-color .2s,transform .2s}
+  .btn:hover{transform:translateY(-2px)}
+}
+
+.dj{font-family:var(--f-display);font-size:clamp(30px, 6.6vw, 50px);line-height:1.15;letter-spacing:.03em;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin:0}
+.dj i{font-style:normal;color:var(--ember);font-size:.8em}
+.dj .dl{font-family:var(--f-mono);font-weight:400;font-size:16px;letter-spacing:.2em;color:var(--ember)}
+
+.info{border-top:1px solid var(--rule);padding-top:24px;display:grid;grid-template-columns:auto 1fr;align-items:end;gap:18px 28px}
+.meta{min-width:0}
+.date{font-family:var(--f-display);font-size:clamp(84px, 20vw, 140px);line-height:.88;letter-spacing:.01em}
+.date small{font-size:.42em;margin-left:12px;color:var(--ember)}
+.meta{text-align:right;font-weight:700;font-size:clamp(18px, 3.4vw, 24px);line-height:1.6;font-variant-numeric:tabular-nums}
+.meta .s{font-weight:500;font-size:.8em;color:var(--ink-2)}
+
+.go{display:flex;flex-wrap:wrap;gap:12px}
+.btn{font-weight:700;font-size:16px;text-decoration:none;padding:14px 22px;border:1px solid var(--ember);border-radius:6px;background:rgba(23,17,15,.6)}
+.btn.fill{background:var(--ember);color:var(--ground)}
+.btn:hover{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+@media (max-width:560px){
+  .info{grid-template-columns:1fr}
+  .meta{text-align:left}
+}
+</style>
+
+<canvas id="field" aria-hidden="true"></canvas>
+<main class="sheet">
+  <header class="top">
+    <div class="lbl">Vol.01</div>
+    <div class="lbl">HIP-HOP / R&amp;B</div>
+  </header>
+
+  <div class="hero">
+    <h1 class="mark"><b aria-label="TAION"><i>T</i><i>A</i><i>I</i><i>O</i><i>N</i></b><span>体温</span></h1>
+    <p class="line">熱は、<em>うつる。</em></p>
+  </div>
+
+  <p class="dj"><span class="dl">DJ</span>KAZUKI<i>/</i>SATORA<i>/</i>DAITO<i>/</i>TAKUMA</p>
+
+  <div class="info">
+    <div class="date">12.12<small>SAT</small></div>
+    <div class="meta">19:00 – 24:00<br>DOOR ¥2,000 + 1D<br>Music Bar 熱帯夜<span class="s">　西船橋</span></div>
+  </div>
+
+  <nav class="go" aria-label="参加">
+    <a class="btn" href="https://www.google.com/maps/search/?api=1&amp;query=%E5%8D%83%E8%91%89%E7%9C%8C%E8%88%B9%E6%A9%8B%E5%B8%82%E8%A5%BF%E8%88%B94-24-8" target="_blank" rel="noopener">地図</a>
+  </nav>
+</main>
+
+<script>
+(function(){
+  const cv=document.getElementById('field'), ctx=cv.getContext('2d');
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W,H,dpr,pts=[],ptr={x:0,y:0,w:0,tw:0};
+  const C0=[74,37,25],C1=[168,57,31],C2=[240,104,58];
+  const lerp=(c1,c2,t)=>c1.map((c,k)=>Math.round(c+(c2[k]-c)*t));
+  const S={1:[[3,0]],2:[[0,1]],3:[[3,1]],4:[[1,2]],5:[[3,0],[1,2]],6:[[0,2]],7:[[3,2]],8:[[2,3]],9:[[0,2]],10:[[0,1],[2,3]],11:[[1,2]],12:[[1,3]],13:[[0,1]],14:[[0,3]]};
+  function setup(){
+    dpr=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+    cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    let seed=1212; const rnd=()=>(seed=(seed*16807)%2147483647,(seed-1)/2147483646);
+    const a=[W*.28,H*.33], b=[W*.74,H*.64]; pts=[{x:a[0],y:a[1],w:1.25},{x:b[0],y:b[1],w:1.25}];
+    let g=0; while(pts.length<16&&g++<600){
+      const t=rnd(),x=a[0]+(b[0]-a[0])*t+(rnd()-.5)*W*.42,y=a[1]+(b[1]-a[1])*t+(rnd()-.5)*H*.32;
+      if(x>0&&x<W&&pts.every(p=>Math.hypot(p.x-x,p.y-y)>50))pts.push({x,y,w:.45+rnd()*.35});
+    }
+    pts.forEach((p,i)=>{p.ox=p.x;p.oy=p.y;p.ph=i*1.7;p.r=18+(i%5)*9;p.sp=.15+(i%7)*.03});
+  }
+  function frame(t){
+    const T=t/1000, st=W>900?7:6, nx=Math.ceil(W/st)+1, ny=Math.ceil(H/st)+1, v=new Float32Array(nx*ny);
+    const sigma=Math.max(60,Math.min(W,H)*.1), k2=1/(2*sigma*sigma);
+    // the two main bodies drift toward each other and back, like two people meeting
+    const meet=still?0:(Math.sin(T*.25)*.5+.5)*.18;
+    const cur=pts.map((p,i)=>{
+      let x=p.ox+Math.cos(T*p.sp+p.ph)*p.r*(still?0:1), y=p.oy+Math.sin(T*p.sp*1.3+p.ph)*p.r*(still?0:1);
+      if(i===0){x+= (pts[1].ox-p.ox)*meet; y+=(pts[1].oy-p.oy)*meet}
+      if(i===1){x+= (pts[0].ox-p.ox)*meet; y+=(pts[0].oy-p.oy)*meet}
+      return [x,y,p.w*(1+(still?0:.08*Math.sin(T*1.1+p.ph)))];
+    });
+    ptr.w+=(ptr.tw-ptr.w)*.06; if(ptr.w>.01)cur.push([ptr.x,ptr.y,ptr.w]);
+    let vmax=2.2;
+    for(let j=0;j<ny;j++){const y=j*st;for(let i=0;i<nx;i++){const x=i*st;let s=0;for(const q of cur){const dx=x-q[0],dy=y-q[1];s+=q[2]*Math.exp(-(dx*dx+dy*dy)*k2)}v[j*nx+i]=s}}
+    ctx.clearRect(0,0,W,H); ctx.lineWidth=.7; ctx.globalAlpha=.85;
+    for(let L=.05;L<1;L+=.04){
+      const lv=L*vmax, c=L<.5?lerp(C0,C1,L/.5):lerp(C1,C2,(L-.5)/.5);
+      ctx.strokeStyle='rgb('+c+')'; ctx.beginPath();
+      for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){
+        const q0=v[j*nx+i],q1=v[j*nx+i+1],q2=v[(j+1)*nx+i+1],q3=v[(j+1)*nx+i];
+        const k=(q0>lv)|((q1>lv)<<1)|((q2>lv)<<2)|((q3>lv)<<3); if(k===0||k===15)continue;
+        const x=i*st,y=j*st,e=[[x+st*(lv-q0)/(q1-q0),y],[x+st,y+st*(lv-q1)/(q2-q1)],[x+st*(lv-q3)/(q2-q3),y+st],[x,y+st*(lv-q0)/(q3-q0)]];
+        for(const[p,r]of S[k]){ctx.moveTo(e[p][0],e[p][1]);ctx.lineTo(e[r][0],e[r][1])}
+      }
+      ctx.stroke();
+    }
+  }
+  setup();
+  if(still){frame(0);addEventListener('resize',()=>{setup();frame(0)});return}
+  // your own heat joins the map wherever you point or touch
+  const on=e=>{const p=e.touches?e.touches[0]:e;ptr.x=p.clientX;ptr.y=p.clientY;ptr.tw=1.1};
+  addEventListener('pointermove',on,{passive:true}); addEventListener('touchmove',on,{passive:true});
+  addEventListener('pointerleave',()=>ptr.tw=0); addEventListener('touchend',()=>ptr.tw=0);
+  let last=0; (function loop(t){ if(!document.hidden && t-last>40){frame(t);last=t} requestAnimationFrame(loop) })(0);
+  let tm; addEventListener('resize',()=>{clearTimeout(tm);tm=setTimeout(setup,150)});
+})();
+</script>
